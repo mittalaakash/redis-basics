@@ -30,3 +30,18 @@ app.get('/photos/:id', async (req, res) => {
 app.listen(3000, () => {
   console.log('Server listening on port 3000');
 });
+
+function cache(key, callback) {
+  return new Promise((resolve, reject) => {
+    client.get(key, (err, data) => {
+      if (err) reject(err);
+      if (data != null) resolve(JSON.parse(data));
+      else {
+        callback().then(data => {
+          client.set(key, JSON.stringify(data));
+          resolve(data);
+        });
+      }
+    });
+  });
+}
