@@ -2,46 +2,45 @@ const express = require('express');
 const axios = require('axios');
 const cors = require('cors');
 
+const { cache } = require('./cache');
+
 const app = express();
-app.use(express.urlencoded({ extended: false }));
+app.use(express.urlencoded({ extended: true }));
 app.use(cors());
 
 app.get('/photos', async (req, res) => {
   const albumId = req.query.albumId;
-  const { data } = await axios.get(
-    `https://jsonplaceholder.typicode.com/photos`,
-    {
-      params: { albumId },
-    },
-  );
 
-  res.json(data);
+  try {
+    const data = await cache(`photos?albumId=${albumId}`, async () => {
+      const { data } = await axios.get(
+        `https://jsonplaceholder.typicode.com/photos`,
+        {
+          params: { albumId },
+        },
+      );
+      return data;
+    });
+    return res.json(data);
+  } catch (error) {
+    return res.json({ error: error.message });
+  }
 });
 
 app.get('/photos/:id', async (req, res) => {
-  debugger;
-  const { data } = await axios.get(
-    `https://jsonplaceholder.typicode.com/photos/${req.params.id}`,
-  );
-
-  res.json(data);
+  try {
+    const data = await cache(`photos:${req.params.id}`, async () => {
+      const { data } = await axios.get(
+        `https://jsonplaceholder.typicode.com/photos/${req.params.id}`,
+      );
+      return data;
+    });
+    return res.json(data);
+  } catch (error) {
+    return res.json({ error: error.message });
+  }
 });
 
 app.listen(3000, () => {
   console.log('Server listening on port 3000');
 });
-
-function cache(key, callback) {
-  return new Promise((resolve, reject) => {
-    client.get(key, (err, data) => {
-      if (err) reject(err);
-      if (data != null) resolve(JSON.parse(data));
-      else {
-        callback().then(data => {
-          client.set(key, JSON.stringify(data));
-          resolve(data);
-        });
-      }
-    });
-  });
-}
