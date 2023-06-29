@@ -9,6 +9,7 @@ app.use(express.urlencoded({ extended: true }));
 app.use(cors());
 
 app.get('/photos', async (req, res) => {
+  debugger
   const albumId = req.query.albumId;
 
   try {
